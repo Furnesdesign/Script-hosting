@@ -1,1 +1,1 @@
-# CSS hosting
+# Script hosting
