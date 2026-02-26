@@ -6,7 +6,7 @@
       list: '[data-filter="list"]',
       item: '[data-filter="item"]',
 
-      // NEW: two counters
+      // Counters
       countTotal: '[data-filter="count-total"]',
       countShowing: '[data-filter="count-showing"]',
 
@@ -15,12 +15,10 @@
       searchSource: '[data-filter-source="live-search"]',
 
       dropdownWrapper: '[data-filter-dropdown="wrapper"]',
-      dropdownButton: '[data-filter-dropdown="button"]',
       dropdownToggleLabel: '[data-filter-dropdown="toggle-label"]',
       dropdownToggleTag: '[data-filter-dropdown="toggle-tag"]',
       dropdownToggleTagLabel: '[data-filter-dropdown="toggle-tag-label"]',
       dropdownToggleTagClose: '[data-filter-dropdown="toggle-tag-close"]',
-      dropdownList: '[data-filter-dropdown="list"]',
       dropdownTag: "[data-filter-dropdown-tag]",
       sourceTag: "[data-filter-source-tag]",
       iconCheck: '[data-filter-dropdown="icon-checked"]',
@@ -111,33 +109,40 @@
     });
   }
 
-function toggleDropdownSelection(wrapperIndex, slug, tagElement, wrapper) {
-  const selections = state.dropdownSelections.get(wrapperIndex);
-  if (!selections || !slug) return;
+  // Robust Webflow dropdown close (closes nearest .w-dropdown)
+  function closeDropdown(fromEl) {
+    const dropdown =
+      fromEl &&
+      (fromEl.closest(".w-dropdown") || fromEl.querySelector(".w-dropdown"));
+    if (!dropdown) return;
 
-  if (selections.has(slug)) {
-    selections.delete(slug);
-    updateTagVisuals(tagElement, false);
-  } else {
-    selections.clear();
-    clearAllTagVisualsInWrapper(wrapper);
-    selections.add(slug);
-    updateTagVisuals(tagElement, true);
+    const toggle = dropdown.querySelector(".w-dropdown-toggle");
+    if (!toggle) return;
+
+    if (dropdown.classList.contains("w--open")) {
+      toggle.click();
+    }
   }
 
-  updateToggleTag(wrapper, wrapperIndex, tagElement);
-  applyFilters();
+  function toggleDropdownSelection(wrapperIndex, slug, tagElement, wrapper) {
+    const selections = state.dropdownSelections.get(wrapperIndex);
+    if (!selections || !slug) return;
 
-  // Close dropdown after selecting a tag
-  closeDropdown(wrapper);
-}
-  function closeDropdown(wrapper) {
-    const button = wrapper.querySelector(CONFIG.selectors.dropdownButton);
-    if (!button) return;
+    if (selections.has(slug)) {
+      selections.delete(slug);
+      updateTagVisuals(tagElement, false);
+    } else {
+      selections.clear();
+      clearAllTagVisualsInWrapper(wrapper);
+      selections.add(slug);
+      updateTagVisuals(tagElement, true);
+    }
 
-    const isOpen =
-      wrapper.classList.contains("w--open") || wrapper.querySelector(".w--open");
-    if (isOpen) button.click();
+    updateToggleTag(wrapper, wrapperIndex, tagElement);
+    applyFilters();
+
+    // Close dropdown after selecting a tag (defer so Webflow finishes click handling)
+    setTimeout(() => closeDropdown(tagElement), 0);
   }
 
   function updateToggleTag(wrapper, wrapperIndex, tagElement) {
@@ -161,8 +166,7 @@ function toggleDropdownSelection(wrapperIndex, slug, tagElement, wrapper) {
         if (labelElement) {
           toggleTagLabel.textContent = labelElement.textContent;
         } else {
-          const selectedSlug = Array.from(selections)[0];
-          toggleTagLabel.textContent = selectedSlug;
+          toggleTagLabel.textContent = Array.from(selections)[0];
         }
       }
     }
@@ -173,7 +177,6 @@ function toggleDropdownSelection(wrapperIndex, slug, tagElement, wrapper) {
       const closeButton = wrapper.querySelector(
         CONFIG.selectors.dropdownToggleTagClose
       );
-
       if (!closeButton) return;
 
       closeButton.addEventListener(
@@ -197,7 +200,9 @@ function toggleDropdownSelection(wrapperIndex, slug, tagElement, wrapper) {
           if (toggleTag) toggleTag.style.display = "none";
 
           applyFilters();
-          closeDropdown(wrapper);
+
+          // Nice UX: close dropdown when clearing via close icon
+          setTimeout(() => closeDropdown(closeButton), 0);
         },
         true
       );
@@ -240,7 +245,10 @@ function toggleDropdownSelection(wrapperIndex, slug, tagElement, wrapper) {
     );
   }
 
-  // NEW: total + showing + hide/show parent of count-showing
+  // Counters:
+  // - count-total = total items
+  // - count-showing = visible items when filtered
+  // Hide/show PARENT of count-showing: display none/flex
   function updateCount() {
     const totalEl = document.querySelector(CONFIG.selectors.countTotal);
     const showingEl = document.querySelector(CONFIG.selectors.countShowing);
@@ -258,7 +266,6 @@ function toggleDropdownSelection(wrapperIndex, slug, tagElement, wrapper) {
     const hasSearchFilter = !!state.searchQuery;
     const isFilterActive = hasSearchFilter || hasDropdownFilter;
 
-    // Hide/show the PARENT element of count-showing (as requested)
     if (showingEl && showingEl.parentElement) {
       showingEl.parentElement.style.display = isFilterActive ? "flex" : "none";
     }
@@ -282,7 +289,6 @@ function toggleDropdownSelection(wrapperIndex, slug, tagElement, wrapper) {
 
     for (const [, selections] of state.dropdownSelections) {
       if (!selections || selections.size === 0) continue;
-
       if (itemSourceTags.length === 0) return false;
 
       const hasMatchingTag = Array.from(selections).some((slug) =>
@@ -293,7 +299,7 @@ function toggleDropdownSelection(wrapperIndex, slug, tagElement, wrapper) {
     return true;
   }
 
-  // Public API (optional, but kept from your version)
+  // Optional public API
   window.WebflowFilter = {
     reset: function () {
       const searchInput = document.querySelector(CONFIG.selectors.liveSearch);
