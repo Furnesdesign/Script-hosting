@@ -37,7 +37,7 @@
 
   function debounce(func, wait) {
     let timeout;
-    return function executedFunction(...args) {
+    return function (...args) {
       const later = () => {
         clearTimeout(timeout);
         func(...args);
@@ -94,6 +94,21 @@
     });
   }
 
+  // Mirror click to close Webflow dropdown
+  function mirrorCloseDropdownFrom(el) {
+    if (!el) return;
+    const dropdown = el.closest(".w-dropdown");
+    if (!dropdown) return;
+
+    const toggle = dropdown.querySelector(".w-dropdown-toggle");
+    if (!toggle) return;
+
+    // Only click if it is open
+    if (dropdown.classList.contains("w--open")) {
+      setTimeout(() => toggle.click(), 0);
+    }
+  }
+
   function setupDropdowns() {
     state.dropdownWrappers.forEach((wrapper, wrapperIndex) => {
       wrapper.addEventListener("click", (e) => {
@@ -105,23 +120,11 @@
 
         const slug = tagElement.getAttribute("data-filter-dropdown-tag");
         toggleDropdownSelection(wrapperIndex, slug, tagElement, wrapper);
+
+        // NEW: close dropdown after selection via mirror click
+        mirrorCloseDropdownFrom(tagElement);
       });
     });
-  }
-
-  // Robust Webflow dropdown close (closes nearest .w-dropdown)
-  function closeDropdown(fromEl) {
-    const dropdown =
-      fromEl &&
-      (fromEl.closest(".w-dropdown") || fromEl.querySelector(".w-dropdown"));
-    if (!dropdown) return;
-
-    const toggle = dropdown.querySelector(".w-dropdown-toggle");
-    if (!toggle) return;
-
-    if (dropdown.classList.contains("w--open")) {
-      toggle.click();
-    }
   }
 
   function toggleDropdownSelection(wrapperIndex, slug, tagElement, wrapper) {
@@ -140,9 +143,6 @@
 
     updateToggleTag(wrapper, wrapperIndex, tagElement);
     applyFilters();
-
-    // Close dropdown after selecting a tag (defer so Webflow finishes click handling)
-    setTimeout(() => closeDropdown(tagElement), 0);
   }
 
   function updateToggleTag(wrapper, wrapperIndex, tagElement) {
@@ -201,8 +201,8 @@
 
           applyFilters();
 
-          // Nice UX: close dropdown when clearing via close icon
-          setTimeout(() => closeDropdown(closeButton), 0);
+          // Close dropdown after clearing selection (mirror click)
+          mirrorCloseDropdownFrom(closeButton);
         },
         true
       );
