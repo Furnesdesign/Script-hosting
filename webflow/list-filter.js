@@ -111,24 +111,26 @@
     });
   }
 
-  function toggleDropdownSelection(wrapperIndex, slug, tagElement, wrapper) {
-    const selections = state.dropdownSelections.get(wrapperIndex);
-    if (!selections || !slug) return;
+function toggleDropdownSelection(wrapperIndex, slug, tagElement, wrapper) {
+  const selections = state.dropdownSelections.get(wrapperIndex);
+  if (!selections || !slug) return;
 
-    if (selections.has(slug)) {
-      selections.delete(slug);
-      updateTagVisuals(tagElement, false);
-    } else {
-      selections.clear();
-      clearAllTagVisualsInWrapper(wrapper);
-      selections.add(slug);
-      updateTagVisuals(tagElement, true);
-    }
-
-    updateToggleTag(wrapper, wrapperIndex, tagElement);
-    applyFilters();
+  if (selections.has(slug)) {
+    selections.delete(slug);
+    updateTagVisuals(tagElement, false);
+  } else {
+    selections.clear();
+    clearAllTagVisualsInWrapper(wrapper);
+    selections.add(slug);
+    updateTagVisuals(tagElement, true);
   }
 
+  updateToggleTag(wrapper, wrapperIndex, tagElement);
+  applyFilters();
+
+  // Close dropdown after selecting a tag
+  closeDropdown(wrapper);
+}
   function closeDropdown(wrapper) {
     const button = wrapper.querySelector(CONFIG.selectors.dropdownButton);
     if (!button) return;
