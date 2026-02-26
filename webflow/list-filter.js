@@ -258,7 +258,7 @@
 
     // Hide/show the PARENT element of count-showing (as requested)
     if (showingEl && showingEl.parentElement) {
-      showingEl.parentElement.style.display = isFilterActive ? "block" : "none";
+      showingEl.parentElement.style.display = isFilterActive ? "flex" : "none";
     }
   }
 
